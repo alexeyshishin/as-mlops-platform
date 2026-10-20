@@ -1,0 +1,33 @@
+name: validate-dags
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '**.py'
+
+env:
+  SRC_REPO_URL: https://git.alexshishin.ru/mlops/training.git
+  CI_TEMPLATES_URL: https://git.alexshishin.ru/mlops/ci-templates.git
+  DAG_DIR: dags
+
+jobs:
+  validate:
+    runs-on: shell
+    steps:
+      - name: clone source
+        run: |
+          rm -rf src
+          git clone --depth 1 --branch main "$SRC_REPO_URL" src
+
+      - name: clone ci-templates
+        run: |
+          rm -rf ci-templates-src
+          git clone --depth 1 --branch main "$CI_TEMPLATES_URL" ci-templates-src
+
+      - name: validate dags
+        working-directory: src
+        env:
+          DAG_DIR: ${{ env.DAG_DIR }}
+        run: bash ../ci-templates-src/scripts/validate-airflow-dag.sh

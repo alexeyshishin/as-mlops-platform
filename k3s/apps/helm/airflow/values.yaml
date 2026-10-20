@@ -1,0 +1,120 @@
+executor: KubernetesExecutor
+
+images:
+  airflow:
+    repository: git.alexshishin.ru/mlops/airflow-custom
+    tag: "latest"
+
+data:
+  metadataSecretName: airflow-postgres-secret
+  brokerUrlSecretName: airflow-redis-secret
+
+postgresql:
+  enabled: false
+
+redis:
+  enabled: false
+
+dagProcessor:
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+
+apiServer:
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+
+scheduler:
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+
+triggerer:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 512Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+
+dags:
+  gitSync:
+    enabled: true
+    repo: "https://git.alexshishin.ru/mlops/training.git"
+    branch: distill-classifier
+    wait: 60
+    subPath: "dags"
+
+webserverSecretKeySecretName: airflow-webserver-secret
+fernetKeySecretName: airflow-fernet-key
+apiSecretKeySecretName: airflow-api-secret-key
+jwtSecretName: airflow-jwt-secret
+
+createUserJob:
+  env:
+    - name: _AIRFLOW_ADMIN_USERNAME
+      valueFrom:
+        secretKeyRef:
+          name: airflow-admin-secret
+          key: username
+    - name: _AIRFLOW_ADMIN_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: airflow-admin-secret
+          key: password
+    - name: _AIRFLOW_JURY_USERNAME
+      valueFrom:
+        secretKeyRef:
+          name: airflow-jury-secret
+          key: username
+    - name: _AIRFLOW_JURY_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: airflow-jury-secret
+          key: password
+  args:
+    - "bash"
+    - "-c"
+    - |-
+      airflow users create \
+        -r Admin \
+        -u "$_AIRFLOW_ADMIN_USERNAME" \
+        -e "$_AIRFLOW_ADMIN_USERNAME@example.com" \
+        -f airflow \
+        -l admin \
+        -p "$_AIRFLOW_ADMIN_PASSWORD" || true
+      airflow users create \
+        -r Viewer \
+        -u "$_AIRFLOW_JURY_USERNAME" \
+        -e "$_AIRFLOW_JURY_USERNAME@example.com" \
+        -f jury \
+        -l jury \
+        -p "$_AIRFLOW_JURY_PASSWORD" || true
+
+config:
+  kubernetes_executor:
+    namespace: mlops
+    delete_worker_pods: "True"
+  logging:
+    remote_logging: "True"
+    remote_base_log_folder: "s3://airflow-logs/logs"
+    remote_log_conn_id: "minio_s3"
+
+secret:
+  - envName: AIRFLOW_CONN_MINIO_S3
+    secretName: airflow-minio-conn-secret
+    secretKey: connection

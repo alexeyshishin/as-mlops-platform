@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0",
+  "task": "single_label_dialogue_intent_classification",
+  "language": "ru",
+  "scope": "Обычный основной чат; служебные режимы и активные специализированные сценарии исключены",
+  "model_input_fields": ["history", "text"],
+  "required_prediction_fields": ["intent"],
+  "optional_prediction_fields": ["needs_clarification"],
+  "forbidden_input_fields": ["intent", "needs_clarification", "rationale", "tags", "id", "group_id", "split"],
+  "history_contract": {"roles": ["user", "assistant"], "maximum_previous_user_messages": 3, "maximum_previous_assistant_messages": 4, "order": "chronological", "current_text_is_not_in_history": true, "normalization": "Учебный history-before-query; не побайтный runtime API, где текущая user-реплика может уже занимать место в окне 4 user + 4 assistant"},
+  "clarification_contract": {"type": "boolean", "true_allowed_only_for": "data_catalog", "meaning": "Неясно: найти объекты каталога или получить объяснение темы; это отдельный признак, не девятый класс и не downstream уточнение фильтров каталога"},
+  "labels": [
+    {"id": "greeting", "name": "Приветствие", "description": "Приветствие или самостоятельное нейтральное прощание без рабочей задачи", "action": "Короткий разговорный ответ"},
+    {"id": "capabilities", "name": "Возможности ассистента", "description": "Вопрос о том, кто сам ассистент и какие задачи он умеет выполнять", "action": "Показать возможности ассистента"},
+    {"id": "gratitude", "name": "Благодарность и завершение", "description": "Благодарность, подтверждение завершённости помощи или отсутствие дальнейших вопросов", "action": "Короткий ответ на благодарность или завершение"},
+    {"id": "data_catalog", "name": "Поиск объектов данных", "description": "Найти таблицу, витрину, куб, дашборд, представление или иной объект; продолжить выдачу каталога", "action": "Поиск объектов каталога либо уточнение типа запроса"},
+    {"id": "pivot_table", "name": "Построение сводной", "description": "Явная просьба построить или изменить числовую таблицу с данными, разрезами, фильтрами или агрегацией", "action": "Передать задачу в сценарий работы со сводной таблицей"},
+    {"id": "technical", "name": "Рабочий вопрос", "description": "Объяснение, методика, ошибка, доступ, продукт или иной содержательный вопрос; класс по умолчанию", "action": "Продолжить предметную обработку с поиском знаний, если нужны факты"},
+    {"id": "support", "name": "Запрос оператора", "description": "Явная просьба о человеке либо однозначный выбор варианта оператора из последнего предложения ассистента", "action": "Передать запрос в процедуру обращения к поддержке"},
+    {"id": "no_rag", "name": "Ответ целиком по истории", "description": "Вопрос о переписке или преобразование уже данного текста; все необходимые сведения присутствуют в переданной истории", "action": "Ответить по видимой истории без поиска новых фактов"}
+  ],
+  "annotation_conventions": {
+    "farewell": "Отдельное «пока» — greeting; «вопросов больше нет» и «на этом всё» — gratitude; спорные смешанные прощания не используются",
+    "multi_intent": "Вежливое вступление не отменяет явно сформулированную рабочую задачу; несколько самостоятельных задач исключены из стартового набора",
+    "ambiguity": "При сомнении support/technical, pivot_table/technical или no_rag/technical выбирается technical; неоднозначность catalog/объяснение — data_catalog и needs_clarification=true",
+    "routing_is_not_ground_truth": "Ошибка LLM, служебный fallback или специальный режим не меняют семантическую разметку примера"
+  },
+  "dataset": {"rows": 160, "rows_per_label": 20, "train_per_label": 16, "dev_per_label": 4, "split_key": "split", "leakage_group_key": "group_id", "provenance": "Синтетическая ручная разметка по активному контракту; не реальные пользовательские логи"}
+}

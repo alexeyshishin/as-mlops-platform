@@ -1,0 +1,37 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: mlflow
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+spec:
+  project: default
+  sources:
+    - repoURL: https://community-charts.github.io/helm-charts
+      chart: mlflow
+      targetRevision: 1.11.5
+      helm:
+        valueFiles:
+          - $values/apps/helm/mlflow/values.yaml
+    - repoURL: https://github.com/alexeyshishin/MLOps.git
+      targetRevision: main
+      ref: values
+    - repoURL: https://github.com/alexeyshishin/MLOps.git
+      targetRevision: main
+      path: apps/helm/mlflow/post-sync
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: mlops
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m

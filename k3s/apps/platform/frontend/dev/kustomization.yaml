@@ -1,0 +1,12 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../base
+namespace: mlops
+labels:
+  - pairs:
+      app: frontend
+      env: dev
+images:
+  - name: git.alexshishin.ru/mlops/frontend
+    newTag: 286cb8ac895b3c2639f3eb7e8897cd35788400f6

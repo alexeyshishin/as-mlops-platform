@@ -1,0 +1,9 @@
+node_modules
+.next
+out
+.git
+.gitea
+*.log
+npm-debug.log*
+.DS_Store
+.env*

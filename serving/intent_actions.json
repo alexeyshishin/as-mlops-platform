@@ -1,0 +1,13 @@
+{
+  "_source": "manual extraction of the \"action\" field from hackathon-intent-classifier-starter 3/labels.json (also duplicated verbatim in platform/training/labels.json). Manually synced, not automated — risk of drift if labels.json changes and this file isn't updated to match.",
+  "actions": {
+    "greeting": "Короткий разговорный ответ",
+    "capabilities": "Показать возможности ассистента",
+    "gratitude": "Короткий ответ на благодарность или завершение",
+    "data_catalog": "Поиск объектов каталога либо уточнение типа запроса",
+    "pivot_table": "Передать задачу в сценарий работы со сводной таблицей",
+    "technical": "Продолжить предметную обработку с поиском знаний, если нужны факты",
+    "support": "Передать запрос в процедуру обращения к поддержке",
+    "no_rag": "Ответить по видимой истории без поиска новых фактов"
+  }
+}

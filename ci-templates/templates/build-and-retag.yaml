@@ -1,0 +1,53 @@
+name: build-and-retag
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  APP_NAME: CHANGE_ME
+  SRC_REPO_URL: https://git.alexshishin.ru/mlops/CHANGE_ME.git
+  CI_TEMPLATES_URL: https://git.alexshishin.ru/mlops/ci-templates.git
+  IMAGE_NAME: git.alexshishin.ru/mlops/CHANGE_ME
+  DOCKERFILE_PATH: Dockerfile
+  BUILD_CONTEXT_DIR: /ci-workspace/CHANGE_ME/src
+  K3S_REPO_URL: https://github.com/alexeyshishin/MLOps.git
+  KUSTOMIZATION_PATH: apps/platform/CHANGE_ME/dev/kustomization.yaml
+  ARGOCD_APP: CHANGE_ME
+  ARGOCD_SERVER: https://argocd.alexshishin.ru
+
+jobs:
+  build-and-retag:
+    runs-on: shell
+    steps:
+      - name: clone source into shared build workspace
+        run: |
+          rm -rf "$BUILD_CONTEXT_DIR"
+          mkdir -p "$(dirname "$BUILD_CONTEXT_DIR")"
+          git clone --depth 1 --branch main "$SRC_REPO_URL" "$BUILD_CONTEXT_DIR"
+
+      - name: clone ci-templates
+        run: |
+          rm -rf ci-templates-src
+          git clone --depth 1 --branch main "$CI_TEMPLATES_URL" ci-templates-src
+
+      - name: build and push image (isolated kaniko pod)
+        env:
+          TAG: ${{ gitea.sha }}
+        run: bash ci-templates-src/scripts/kaniko-build-push.sh
+
+      - name: bump tag in k3s
+        env:
+          NEW_TAG: ${{ gitea.sha }}
+          K3S_DEPLOY_TOKEN: ${{ secrets.K3S_DEPLOY_TOKEN }}
+        run: bash ci-templates-src/scripts/retag-kustomization.sh
+
+      - name: trigger argocd sync
+        env:
+          ARGOCD_SYNC_TOKEN: ${{ secrets.ARGOCD_SYNC_TOKEN }}
+        run: bash ci-templates-src/scripts/argocd-sync.sh
+
+      - name: clean up shared build workspace
+        if: always()
+        run: rm -rf "$BUILD_CONTEXT_DIR"

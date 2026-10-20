@@ -1,0 +1,58 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/argoproj/argocd
+  tag: v2.x.x
+
+server:
+  service:
+    type: ClusterIP
+    port: 443
+
+configs:
+  cm:
+    url: https://argocd.alexshishin.ru
+    accounts.jury: apiKey, login
+    accounts.ci-sync: apiKey
+  rbac:
+    policy.default: role:readonly
+    policy.csv: |
+      p, role:admin, *, *, *, allow
+      g, admin, role:admin
+      g, jury, role:readonly
+      p, role:ci-sync, applications, get, default/frontend, allow
+      p, role:ci-sync, applications, sync, default/frontend, allow
+      p, role:ci-sync, applications, get, default/serving, allow
+      p, role:ci-sync, applications, sync, default/serving, allow
+      g, ci-sync, role:ci-sync
+
+applicationSet:
+  enabled: true
+
+repoServer:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+controller:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1536Mi
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
